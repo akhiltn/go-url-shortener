@@ -7,6 +7,7 @@ import (
 
 	"github.com/akhiltn/go-url-shortener/database"
 	"github.com/akhiltn/go-url-shortener/helpers"
+	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -37,9 +38,9 @@ func ShortenUrl(c *fiber.Ctx) error {
 		_ = r2.Set(database.Ctx, c.IP(), os.Getenv("API_QUOTA"), 30*60*time.Second).Err()
 	} else {
 		val, _ := r2.Get(database.Ctx, c.IP()).Result()
-		valInt := strconv.Atoi(val)
+		valInt, _ := strconv.Atoi(val)
 		if valInt <= 0 {
-			limit := r2.TTL(database.Ctx, c.IP()).Result()
+			limit, _ := r2.TTL(database.Ctx, c.IP()).Result()
 			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
 				"error":            "Rate limit exceeded",
 				"rate_limit_reset": limit / time.Nanosecond / time.Minute,
@@ -74,6 +75,18 @@ func ShortenUrl(c *fiber.Ctx) error {
 			"error": "Unable to connect to redis server",
 		})
 	}
+	resp := response{
+		URL:             body.URL,
+		CustomShort:     "",
+		Expiry:          body.Expiry,
+		XRateRemaining:  10,
+		XRateLimitReset: 30,
+	}
 	r2.Decr(database.Ctx, c.IP())
-	return nil
+	val, _ = r2.Get(database.Ctx, c.IP()).Result()
+	resp.XRateRemaining, _ = strconv.Atoi(val)
+	ttl, _ := r2.TTL(database.Ctx, c.IP()).Result()
+	resp.XRateLimitReset = ttl / time.Nanosecond / time.Minute
+	resp.CustomShort = os.Getenv("DOMAIN") + "/" + id
+	return c.Status(fiber.StatusOK).JSON(resp)
 }

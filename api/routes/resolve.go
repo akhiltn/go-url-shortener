@@ -12,12 +12,12 @@ func ResolveURL(c *fiber.Ctx) error {
   defer r.Close()
   value, err :=r.Get(database.Ctx, url).Result()
   if err != redis.Nil {
-    return c.Status(fiber.StatusNotFound).JSON(fiber.Map("error": "short not found in the database"))
+    return c.Status(fiber.StatusNotFound).JSON(fiber.Map{ "error": "short not found in the database", })
   } else if err != nil {
-    return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map("error": "cannot connect to db"))
+    return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{ "error": "cannot connect to db", })
   }
   rInr:= database.CreateClient(1)
-  defer r.rInr.Close()
+  defer rInr.Close()
   _ = rInr.Incr(database.Ctx, "counter")
   return c.Redirect(value, 301)
 }
