@@ -6,9 +6,9 @@ import (
 
 	"github.com/akhiltn/go-url-shortener/routes"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
-  "github.com/gofiber/fiber/v2/middleware/healthcheck"
 )
 
 func main() {
@@ -17,8 +17,8 @@ func main() {
 		log.Panic(err)
 	}
 	app := fiber.New()
-	app.Use(logger.New(),healthcheck.New())
-  log.Printf("Starting server on port %s", os.Getenv("APP_PORT"))
+	app.Use(logger.New(), healthcheck.New())
+	log.Printf("Starting server on port %s", os.Getenv("APP_PORT"))
 	setupRoutes(app)
 	log.Fatal(app.Listen(os.Getenv("APP_PORT")))
 }
